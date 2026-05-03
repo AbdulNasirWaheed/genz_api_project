@@ -88,4 +88,87 @@ class ApiService {
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
+  // ===== NEW METHODS =====
+
+// Get All Courses (with optional filters)
+  static Future<Map<String, dynamic>> getCourses({
+    String? type,
+    String? category,
+    String? status,
+  }) async {
+    try {
+      String url = '$baseUrl/get_courses.php';
+      List<String> params = [];
+      if (type != null) params.add('type=$type');
+      if (category != null) params.add('category=$category');
+      if (status != null) params.add('status=$status');
+      if (params.isNotEmpty) url += '?${params.join('&')}';
+
+      final response = await http.get(Uri.parse(url));
+      return json.decode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+// Get Course Details
+  static Future<Map<String, dynamic>> getCourseDetails(int courseId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/get_course_details.php?course_id=$courseId'),
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+// Get Categories
+  static Future<Map<String, dynamic>> getCategories() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/get_categories.php'));
+      return json.decode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+// Enroll in a Course
+  static Future<Map<String, dynamic>> enroll({
+    required int userId,
+    required int courseId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/enroll.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'user_id': userId, 'course_id': courseId}),
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+// My Enrollments
+  static Future<Map<String, dynamic>> getMyEnrollments(int userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/my_enrollments.php?user_id=$userId'),
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+// Dashboard Stats
+  static Future<Map<String, dynamic>> getDashboard() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/dashboard.php'));
+      return json.decode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
 }
