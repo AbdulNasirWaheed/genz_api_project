@@ -23,11 +23,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void loadProfile() async {
-    // ✅ FIX: parse userId safely
     int userId = int.parse(widget.userId.toString());
     var result = await ApiService.getProfile(userId);
-
-    print('🔍 PROFILE RESULT: $result'); // debug
 
     if (result['success'] == true) {
       setState(() {
@@ -36,41 +33,143 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     } else {
       setState(() => isLoading = false);
-      print('❌ Profile load failed: ${result['message']}');
     }
   }
 
-  // ✅ FIX: safe value helper - handles null and non-String types
   String safeValue(dynamic val) {
-    if (val == null) return '';
+    if (val == null || val.toString().isEmpty) return 'Not set';
     return val.toString();
   }
 
-  Widget infoRow(IconData icon, String label, dynamic value) {
-    String displayValue = safeValue(value);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 4)],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.blue),
-          const SizedBox(width: 12),
-          Expanded( // ✅ FIX: Expanded prevents overflow on long text
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                Text(
-                  displayValue.isNotEmpty ? displayValue : 'Not provided',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                  overflow: TextOverflow.ellipsis, // ✅ FIX: no overflow crash
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : userData == null
+          ? const Center(child: Text('Failed to load profile'))
+          : CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 240,
+            pinned: true,
+            automaticallyImplyLeading: false,
+            backgroundColor: theme.colorScheme.primary,
+            elevation: 0,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [theme.colorScheme.primary, theme.colorScheme.primary.withBlue(220)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
-              ],
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 40),
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withOpacity(0.2), width: 2),
+                      ),
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.white,
+                        child: Text(
+                          widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'U',
+                          style: TextStyle(fontSize: 40, color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      widget.userName,
+                      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                    ),
+                    Text(
+                      safeValue(userData!['email']),
+                      style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14, fontWeight: FontWeight.w400),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                    child: const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
+                  ),
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditProfileScreen(
+                          userId: widget.userId,
+                          currentData: userData!,
+                        ),
+                      ),
+                    );
+                    loadProfile();
+                  },
+                ),
+              ),
+            ],
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _sectionHeader(context, 'Personal Information'),
+                      _infoTile(context, Icons.phone_android_rounded, 'Phone', safeValue(userData!['phone'])),
+                      _infoTile(context, Icons.calendar_month_rounded, 'Birthday', safeValue(userData!['dob'])),
+                      _infoTile(context, Icons.person_rounded, 'Gender', safeValue(userData!['gender'])),
+                      _infoTile(context, Icons.location_on_rounded, 'Address', safeValue(userData!['address'])),
+                      
+                      const SizedBox(height: 24),
+                      _sectionHeader(context, 'Learning Profile'),
+                      _infoTile(context, Icons.school_rounded, 'Primary Interest', safeValue(userData!['course'])),
+                      
+                      const SizedBox(height: 40),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            );
+                          },
+                          icon: const Icon(Icons.logout_rounded, size: 18),
+                          label: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFDC2626),
+                            side: const BorderSide(color: Color(0xFFFEE2E2)),
+                            backgroundColor: const Color(0xFFFEF2F2),
+                            padding: const EdgeInsets.symmetric(vertical: 0),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -78,105 +177,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text('My Profile'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
-            },
+  Widget _sectionHeader(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16, left: 4),
+      child: Text(
+        title,
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+      ),
+    );
+  }
+
+  Widget _infoTile(BuildContext context, IconData icon, String label, String value) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500)),
+                Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFF1E293B))),
+              ],
+            ),
           ),
         ],
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : userData == null
-          ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 60, color: Colors.red),
-            const SizedBox(height: 12),
-            const Text('Failed to load profile'),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: loadProfile, // ✅ FIX: retry button
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      )
-          : SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.blue,
-              child: Icon(Icons.person, size: 60, color: Colors.white),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              safeValue(userData!['name']),
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              safeValue(userData!['email']),
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-
-            infoRow(Icons.phone, 'Phone', userData!['phone']),
-            infoRow(Icons.home, 'Address', userData!['address']),
-            infoRow(Icons.calendar_today, 'Date of Birth', userData!['dob']),
-            infoRow(Icons.people, 'Gender', userData!['gender']),
-            infoRow(Icons.book, 'Course', userData!['course']),
-
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.edit, color: Colors.white),
-                label: const Text(
-                  'Edit Profile',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EditProfileScreen(
-                        // ✅ FIX: always pass int
-                        userId: int.parse(widget.userId.toString()),
-                        currentData: userData!,
-                      ),
-                    ),
-                  );
-                  loadProfile();
-                },
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -11,40 +11,106 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Wait 3 seconds then go to Login
-    Future.delayed(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-    });
+    _navigateToHome();
+  }
+
+  _navigateToHome() async {
+    await Future.delayed(const Duration(milliseconds: 2500));
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.blue,
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      body: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary,
+          gradient: LinearGradient(
+            colors: [theme.colorScheme.primary, theme.colorScheme.primary.withBlue(150)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Icon(Icons.school, size: 100, color: Colors.white),
-            SizedBox(height: 20),
-            Text(
-              'Tech Institute',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+            // Abstract Background Shapes
+            Positioned(
+              top: -100,
+              right: -100,
+              child: CircleAvatar(
+                radius: 200,
+                backgroundColor: Colors.white.withOpacity(0.05),
               ),
             ),
-            SizedBox(height: 10),
-            Text(
-              'Learn. Grow. Succeed.',
-              style: TextStyle(fontSize: 16, color: Colors.white70),
+            Positioned(
+              bottom: -50,
+              left: -50,
+              child: CircleAvatar(
+                radius: 150,
+                backgroundColor: Colors.white.withOpacity(0.03),
+              ),
             ),
-            SizedBox(height: 40),
-            CircularProgressIndicator(color: Colors.white),
+            
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Hero(
+                  tag: 'logo',
+                  child: Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.2), width: 2),
+                    ),
+                    child: const Icon(Icons.auto_stories_rounded, size: 80, color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                const Text(
+                  'GenZ Learning',
+                  style: TextStyle(
+                    fontSize: 42,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: -1,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Your Gateway to Modern Skills',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.8),
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 60),
+                const SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                ),
+              ],
+            ),
+            
+            const Positioned(
+              bottom: 40,
+              child: Text(
+                'v 2.0.0',
+                style: TextStyle(color: Colors.white38, fontSize: 12),
+              ),
+            ),
           ],
         ),
       ),

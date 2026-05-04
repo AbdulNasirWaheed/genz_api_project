@@ -35,8 +35,7 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> login(
-      String email, String password) async {
+  static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/login.php'),
@@ -54,7 +53,7 @@ class ApiService {
       final response = await http.post(
         Uri.parse('$baseUrl/get_profile.php'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'user_id': userId.toString()}), // ← toString() here
+        body: json.encode({'user_id': userId.toString()}),
       );
       return json.decode(response.body);
     } catch (e) {
@@ -69,6 +68,7 @@ class ApiService {
     String? address,
     String? course,
     String? dob,
+    String? gender,
   }) async {
     try {
       final response = await http.post(
@@ -81,6 +81,7 @@ class ApiService {
           if (address != null) 'address': address,
           if (course != null) 'course': course,
           if (dob != null) 'dob': dob,
+          if (gender != null) 'gender': gender,
         }),
       );
       return json.decode(response.body);
@@ -88,9 +89,7 @@ class ApiService {
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
-  // ===== NEW METHODS =====
 
-// Get All Courses (with optional filters)
   static Future<Map<String, dynamic>> getCourses({
     String? type,
     String? category,
@@ -99,10 +98,14 @@ class ApiService {
     try {
       String url = '$baseUrl/get_courses.php';
       List<String> params = [];
-      if (type != null) params.add('type=$type');
-      if (category != null) params.add('category=$category');
-      if (status != null) params.add('status=$status');
-      if (params.isNotEmpty) url += '?${params.join('&')}';
+
+      if (type != null && type != 'all') params.add('type=$type');
+      if (category != null && category != 'all') params.add('category=$category');
+      if (status != null && status != 'all') params.add('status=$status');
+
+      if (params.isNotEmpty) {
+        url += '?${params.join('&')}';
+      }
 
       final response = await http.get(Uri.parse(url));
       return json.decode(response.body);
@@ -111,7 +114,6 @@ class ApiService {
     }
   }
 
-// Get Course Details
   static Future<Map<String, dynamic>> getCourseDetails(int courseId) async {
     try {
       final response = await http.get(
@@ -123,7 +125,6 @@ class ApiService {
     }
   }
 
-// Get Categories
   static Future<Map<String, dynamic>> getCategories() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/get_categories.php'));
@@ -133,11 +134,7 @@ class ApiService {
     }
   }
 
-// Enroll in a Course
-  static Future<Map<String, dynamic>> enroll({
-    required int userId,
-    required int courseId,
-  }) async {
+  static Future<Map<String, dynamic>> enroll({required int userId, required int courseId}) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/enroll.php'),
@@ -150,19 +147,15 @@ class ApiService {
     }
   }
 
-// My Enrollments
   static Future<Map<String, dynamic>> getMyEnrollments(int userId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/my_enrollments.php?user_id=$userId'),
-      );
+      final response = await http.get(Uri.parse('$baseUrl/my_enrollments.php?user_id=$userId'));
       return json.decode(response.body);
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
 
-// Dashboard Stats
   static Future<Map<String, dynamic>> getDashboard() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/dashboard.php'));
